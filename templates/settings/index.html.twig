@@ -1,0 +1,10 @@
+{% extends "layout.html.twig" %}
+
+{% block content %}
+  Ciao Andrea, <br>
+  {% if calories > 0 %}
+    il numero di calorie giornaliero è {{ calories }}
+  {% else %}
+    Inserisci il numero di calorie per iniziare <a href="/settings/edit">cliccando qui</a>
+  {% endif %}
+{% endblock %}
