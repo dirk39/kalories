@@ -5,6 +5,12 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Validator\Constraints;
+use Symfony\Component\Form\Extension\Core\Type\FormType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+
+
 
 //Request::setTrustedProxies(array('127.0.0.1'));
 
@@ -26,7 +32,27 @@ $app->get('/settings', function(Silex\Application $app) {
  * Mostra la form per l'inserimento delle calorie
  */
 $app->match('/settings/edit', function(Silex\Application $app, Request $request){
-  return $app['twig']->render('settings/edit.html.twig', []);
+  $form = $app['form.factory']->createBuilder(FormType::class, [])
+    ->add('calories', TextType::class, [
+      "constraints" => [ new Constraints\NotBlank, new Constraints\Type(['type'=>'numeric']),new Constraints\GreaterThan(['value'=>5])]
+    ])
+    ->add('submit', SubmitType::class,[
+      'label' => 'Salva'
+    ])
+    ->getForm();
+  if($request->getMethod() === Request::METHOD_POST)
+  {
+    $form->handleRequest($request);
+
+    if ($form->isValid()) {
+      $data = $form->getData();
+
+
+    }
+
+  }
+
+  return $app['twig']->render('settings/edit.html.twig', ['form' => $form->createView()]);
 })->method('GET|POST')->bind('settings-edit');
 
 /*
