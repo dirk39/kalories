@@ -1,0 +1,39 @@
+version: "2.0"
+
+services:
+  db:
+      image: percona:5.7.11
+      ports:
+          - 3306:3306
+      environment:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: motork
+      volumes:
+          - ./percona/data:/var/lib/mysql
+          - ./percona/conf.d:/etc/mysql/conf.d
+      networks:
+          - internal
+  php-fpm:
+      build: php-fpm
+      ports:
+          - 9000:9000
+      volumes:
+          - ${DIR}:/var/www/motork
+          - ./php-fpm/php.ini:/usr/local/etc/php/conf.d/php.ini
+      links:
+          - db
+      networks:
+          - internal
+      working_dir: /var/www/motork
+  nginx:
+      image: nginx
+      volumes:
+         - ./nginx/conf.d:/etc/nginx/conf.d
+      ports:
+          - 80:80
+      links:
+          - php-fpm
+      networks:
+          - internal
+networks:
+     internal:
