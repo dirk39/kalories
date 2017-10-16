@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>{% block title '' %} - My Silex Application</title>
+        <title>{% block title '' %} - MotorK Kalories</title>
 
         <link href="{{ asset('css/main.css') }}" rel="stylesheet" type="text/css" />
 
@@ -18,6 +18,11 @@
         </script>
     </head>
     <body>
-        {% block content %}{% endblock %}
+        <div class="header">
+            <img src="{{ asset('images/Nowzaradan.jpg') }}" />
+        </div>
+        <div class="main-container">
+            {% block content %}{% endblock %}
+        </div>
     </body>
 </html>
