@@ -28,4 +28,15 @@ $app->register(new Silex\Provider\TranslationServiceProvider(), array(
 
 $app->register(new Silex\Provider\CsrfServiceProvider());
 
+$app->register(new Silex\Provider\DoctrineServiceProvider(), [
+  'db.options' => [
+    'driver'    => 'pdo_mysql',
+    'host'      => 'db',
+    'dbname'    => 'motork',
+    'user'      => 'root',
+    'password'  => '',
+    'charset'   => 'utf8mb4',
+  ]
+]);
+
 return $app;

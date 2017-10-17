@@ -32,9 +32,18 @@ $app->get('/settings', function(Silex\Application $app) {
  * Mostra la form per l'inserimento delle calorie
  */
 $app->match('/settings/edit', function(Silex\Application $app, Request $request){
+  /*
+   * Recuperiamo il valore già a sistema
+   */
+  $sql = "SELECT * FROM settings LIMIT 1";
+  $setting = $app['db']->fetchAssoc($sql, []);
+
+
   $form = $app['form.factory']->createBuilder(FormType::class, [])
     ->add('calories', TextType::class, [
-      "constraints" => [ new Constraints\NotBlank, new Constraints\Type(['type'=>'numeric']),new Constraints\GreaterThan(['value'=>5])]
+      "constraints" => [ new Constraints\NotBlank, new Constraints\Type(['type'=>'numeric']),new Constraints\GreaterThan(['value'=>5])],
+      "label" => "calorie al giorno",
+      "data" => isset($setting['calories'])? $setting['calories']: null
     ])
     ->add('submit', SubmitType::class,[
       'label' => 'Salva'
@@ -46,8 +55,16 @@ $app->match('/settings/edit', function(Silex\Application $app, Request $request)
 
     if ($form->isValid()) {
       $data = $form->getData();
+      $query = "INSERT INTO settings (calories) VALUES(?)";
+      if($setting)
+      {
+        $query = "UPDATE settings SET calories = :calories WHERE id = :id";
+        $data['id'] = $setting['id'];
+      }
 
+      $app['db']->executeUpdate($query, $data);
 
+      /* prevedere flash con messaggio success */
     }
 
   }
