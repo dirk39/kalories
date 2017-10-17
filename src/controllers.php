@@ -93,7 +93,7 @@ $app->match('/dishes/{id}/edit', function(Silex\Application $app, Request $reque
   $dish = $db->fetchAssoc($sql, [$id]);
   if(!$dish)
   {
-    $app->redirect('/');die;
+    return $app->redirect('/');die;
   }
 
   $form = getDishForm($app, $dish);
@@ -108,7 +108,7 @@ $app->match('/dishes/{id}/edit', function(Silex\Application $app, Request $reque
       $query = "UPDATE dishes SET dish=:dish, calories=:calories, eating_time=:eating_time WHERE id=:id ";
       $app['db']->executeUpdate($query, $data);
 
-      $app->redirect('/');
+      return $app->redirect('/');
       /* prevedere flash con messaggio success */
     }
   }
@@ -130,16 +130,25 @@ $app->match('/dishes/add', function(Silex\Application $app, Request $request){
       $query = "INSERT INTO dishes (dish, calories, eating_time) VALUES(:dish, :calories, :eating_time)";
       $app['db']->executeUpdate($query, $data);
 
-      $app->redirect('/');
+      return  $app->redirect('/');
       /* prevedere flash con messaggio success */
     }
   }
 
-  /*
-   * Creare form con piatto da aggiungere (validazioni, salvataggio etc)
-   */
   return $app['twig']->render('add-dish.html.twig', ['form' => $form->createView()]);
 })->method("GET|POST")->bind('add-dish');
+
+
+$app->match('/dishes/{id}/delete', function(Silex\Application $app, Request $request, $id) {
+  $query = "DELETE from dishes WHERE id=:id ";
+  $app['db']->executeUpdate($query, ['id' => $id]);
+  /** @var  Symfony\Component\Routing\Generator\UrlGenerator $routing */
+  $routing = $app['url_generator'];
+  $url = $routing->generate('homepage');
+
+  return $app->redirect($url);
+
+});
 
 
 $app->error(function (\Exception $e, Request $request, $code) use ($app) {
