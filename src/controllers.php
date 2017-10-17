@@ -78,12 +78,27 @@ $app->match('/', function(Silex\Application $app, Request $request){
   /*
    * iniziare con una lista di piatti
    */
-  $sql = "SELECT * FROM dishes";
+  $sql = "SELECT * FROM dishes ";
+  $form = getSearchForm($app);
+  $params = [];
+
+  $form->handleRequest($request);
+
+  if ($form->isValid()) {
+    $data = $form->getData();
+    $params[] = $data['from']->format('Y-m-d H:i:s');
+    $params[] = $data['to']->format('Y-m-d H:i:s');
+
+    $sql .= "WHERE eating_time between ? and ?";
+  }
+
+  $sql.=" ORDER BY eating_time ASC";
+
   /** @var Doctrine\DBAL\Connection $db */
   $db = $app['db'];
-  $dishes = $db->fetchAll($sql);
+  $dishes = $db->fetchAll($sql, $params);
 
-  return $app['twig']->render('index.html.twig', ['dishes' => $dishes]);
+  return $app['twig']->render('index.html.twig', ['dishes' => $dishes, 'form' => $form->createView()]);
 })->bind('homepage');
 
 $app->match('/dishes/{id}/edit', function(Silex\Application $app, Request $request, $id){
@@ -200,6 +215,25 @@ function getDishForm(\Silex\Application $app, $data = [])
   }
 
   $form->add('submit', SubmitType::class, ['label' => 'Save']);
+
+  return $form->getForm();
+}
+
+
+function getSearchForm(\Silex\Application $app)
+{
+  /** @var \Symfony\Component\Form\FormBuilder $form */
+  $form = $app['form.factory']->createBuilder(FormType::class, []);
+
+  $form->add('from', \Symfony\Component\Form\Extension\Core\Type\DateTimeType::class,[
+    'label' => 'From',
+    'constraints' => [ new Constraints\NotBlank, new Constraints\DateTime ]
+  ])->add('to', \Symfony\Component\Form\Extension\Core\Type\DateTimeType::class,[
+    'label' => 'To',
+    'constraints' => [ new Constraints\NotBlank, new Constraints\DateTime ]
+  ]);
+
+  $form->add('submit', SubmitType::class, ['label' => 'Search']);
 
   return $form->getForm();
 }

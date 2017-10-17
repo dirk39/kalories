@@ -1,9 +1,25 @@
 {% extends "layout.html.twig" %}
 
 {% block content %}
-  <div>
-      <a href="/dishes/add">Add new dish</a>
+  <div style="margin-bottom: 50px;">
+    <a href="/dishes/add">Add new dish</a>
   </div>
+  <div style="margin-bottom: 50px;">
+    <form action="#" method="POST">
+      <div style="float:left; margin-right:50px; width: 200px;">
+        {{ form_widget(form.from) }}
+      </div>
+      <div style="float:left; margin-right:50px; width: 200px;">
+        {{ form_widget(form.to) }}
+      </div>
+      <div>
+        {{ form_widget(form.submit  ) }}
+      </div>
+      {{ form_rest(form) }}
+      <br clear="all" />
+    </form>
+  </div>
+
   <div class="dishes-list">
     <table>
         <thead>
