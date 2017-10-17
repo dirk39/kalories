@@ -66,7 +66,6 @@ $app->match('/settings/edit', function(Silex\Application $app, Request $request)
 
       /* prevedere flash con messaggio success */
     }
-
   }
 
   return $app['twig']->render('settings/edit.html.twig', ['form' => $form->createView()]);
@@ -77,17 +76,70 @@ $app->match('/settings/edit', function(Silex\Application $app, Request $request)
  */
 $app->match('/', function(Silex\Application $app, Request $request){
   /*
-   * iniziare con una lista paginata di piatti
+   * iniziare con una lista di piatti
    */
-  return $app['twig']->render('index.html.twig', []);
-});
+  $sql = "SELECT * FROM dishes";
+  /** @var Doctrine\DBAL\Connection $db */
+  $db = $app['db'];
+  $dishes = $db->fetchAll($sql);
 
-$app->match('/add-dish', function(Silex\Application $app, Request $request){
+  return $app['twig']->render('index.html.twig', ['dishes' => $dishes]);
+})->bind('homepage');
+
+$app->match('/dishes/{id}/edit', function(Silex\Application $app, Request $request, $id){
+  $sql = "SELECT * FROM dishes WHERE id = ?";
+  /** @var Doctrine\DBAL\Connection $db */
+  $db = $app['db'];
+  $dish = $db->fetchAssoc($sql, [$id]);
+  if(!$dish)
+  {
+    $app->redirect('/');die;
+  }
+
+  $form = getDishForm($app, $dish);
+
+  if($request->getMethod() === Request::METHOD_POST) {
+    $form->handleRequest($request);
+
+    if ($form->isValid()) {
+      $data = $form->getData();
+      $data['eating_time'] = $data['eating_time']->format('Y-m-d H:i:s');
+
+      $query = "UPDATE dishes SET dish=:dish, calories=:calories, eating_time=:eating_time WHERE id=:id ";
+      $app['db']->executeUpdate($query, $data);
+
+      $app->redirect('/');
+      /* prevedere flash con messaggio success */
+    }
+  }
+
+  return $app['twig']->render('edit-dish.html.twig', ['form' => $form->createView()]);
+
+})->method("GET|POST")->bind('edit-dish');
+
+$app->match('/dishes/add', function(Silex\Application $app, Request $request){
+  $form = getDishForm($app);
+
+  if($request->getMethod() === Request::METHOD_POST) {
+    $form->handleRequest($request);
+
+    if ($form->isValid()) {
+      $data = $form->getData();
+      $data['eating_time'] = $data['eating_time']->format('Y-m-d H:i:s');
+
+      $query = "INSERT INTO dishes (dish, calories, eating_time) VALUES(:dish, :calories, :eating_time)";
+      $app['db']->executeUpdate($query, $data);
+
+      $app->redirect('/');
+      /* prevedere flash con messaggio success */
+    }
+  }
+
   /*
    * Creare form con piatto da aggiungere (validazioni, salvataggio etc)
    */
-  return $app['twig']->render('add-dish.html.twig', []);
-});
+  return $app['twig']->render('add-dish.html.twig', ['form' => $form->createView()]);
+})->method("GET|POST")->bind('add-dish');
 
 
 $app->error(function (\Exception $e, Request $request, $code) use ($app) {
@@ -105,3 +157,40 @@ $app->error(function (\Exception $e, Request $request, $code) use ($app) {
 
     return new Response($app['twig']->resolveTemplate($templates)->render(array('code' => $code)), $code);
 });
+
+
+function getDishForm(\Silex\Application $app, $data = [])
+{
+  /** @var \Symfony\Component\Form\FormBuilder $form */
+  $form = $app['form.factory']->createBuilder(FormType::class, []);
+  $form->add('dish', TextType::class, [
+    'constraints' => [ new Constraints\NotBlank, new Constraints\Length(['min' => 3])],
+    'label' => 'Dish',
+    'data' => isset($data['dish'])? $data['dish']: null
+  ]);
+  $form
+    ->add('calories', TextType::class, [
+      "constraints" => [ new Constraints\NotBlank, new Constraints\Type(['type'=>'numeric']),new Constraints\GreaterThan(['value'=>5])],
+      "label" => "Calories",
+      "data" => isset($data['calories'])? $data['calories']: null
+    ]);
+  $form->add('eating_time', \Symfony\Component\Form\Extension\Core\Type\DateTimeType::class,[
+    'label' => 'Eating time',
+    'constraints' => [ new Constraints\NotBlank, new Constraints\DateTime ],
+    "data" => isset($data['eating_time'])? new DateTime($data['eating_time']): null
+  ]);
+
+  if(isset($data['id']))
+  {
+    $form->add('id', \Symfony\Component\Form\Extension\Core\Type\HiddenType::class,[
+      'constraints' => [ new Constraints\NotBlank, new Constraints\Choice([
+        $data['id']
+      ]) ],
+      'data' => $data['id']
+    ]);
+  }
+
+  $form->add('submit', SubmitType::class, ['label' => 'Save']);
+
+  return $form->getForm();
+}
