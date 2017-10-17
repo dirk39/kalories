@@ -1,4 +1,8 @@
 <form action="#" method="post">
-  {{ form_widget(form) }}
-
+  <div>
+    {{ form_widget(form.calories) }}
+  </div>
+  <div>
+    {{ form_rest(form) }}
+  </div>
 </form>

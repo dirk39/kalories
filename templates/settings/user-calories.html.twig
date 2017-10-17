@@ -1,0 +1,7 @@
+<div style="margin-bottom:50px;">
+  {% if(calories != null) %}
+    User calories per day: {{ calories }} - <a href="{{ app.url_generator.generate('settings-edit')}}">Click here</a> to update value
+  {% else %}
+    No user calories set. <a href="{{ app.url_generator.generate('settings-edit')}}">Click here</a> to insert new value
+  {% endif %}
+</div>

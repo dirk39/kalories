@@ -1,6 +1,7 @@
 {% extends "layout.html.twig" %}
 
 {% block content %}
+  {% include "settings/user-calories.html.twig" with { 'calories': calories } %}
   <div style="margin-bottom: 50px;">
     <a href="/dishes/add">Add new dish</a>
   </div>

@@ -32,21 +32,16 @@ $app->get('/settings', function(Silex\Application $app) {
  * Mostra la form per l'inserimento delle calorie
  */
 $app->match('/settings/edit', function(Silex\Application $app, Request $request){
-  /*
-   * Recuperiamo il valore già a sistema
-   */
-  $sql = "SELECT * FROM settings LIMIT 1";
-  $setting = $app['db']->fetchAssoc($sql, []);
-
+  $setting = getUserSettings($app);
 
   $form = $app['form.factory']->createBuilder(FormType::class, [])
     ->add('calories', TextType::class, [
       "constraints" => [ new Constraints\NotBlank, new Constraints\Type(['type'=>'numeric']),new Constraints\GreaterThan(['value'=>5])],
-      "label" => "calorie al giorno",
+      "label" => "Calories per day",
       "data" => isset($setting['calories'])? $setting['calories']: null
     ])
     ->add('submit', SubmitType::class,[
-      'label' => 'Salva'
+      'label' => 'Save'
     ])
     ->getForm();
   if($request->getMethod() === Request::METHOD_POST)
@@ -64,7 +59,7 @@ $app->match('/settings/edit', function(Silex\Application $app, Request $request)
 
       $app['db']->executeUpdate($query, $data);
 
-      /* prevedere flash con messaggio success */
+      return $app->redirect('/');
     }
   }
 
@@ -75,6 +70,8 @@ $app->match('/settings/edit', function(Silex\Application $app, Request $request)
  * Homepage con lista degli elementi mangiati
  */
 $app->match('/', function(Silex\Application $app, Request $request){
+
+  $calories = getUserCalories($app);
   /*
    * iniziare con una lista di piatti
    */
@@ -98,7 +95,7 @@ $app->match('/', function(Silex\Application $app, Request $request){
   $db = $app['db'];
   $dishes = $db->fetchAll($sql, $params);
 
-  return $app['twig']->render('index.html.twig', ['dishes' => $dishes, 'form' => $form->createView()]);
+  return $app['twig']->render('index.html.twig', ['dishes' => $dishes, 'form' => $form->createView(), 'calories' => $calories]);
 })->bind('homepage');
 
 $app->match('/dishes/{id}/edit', function(Silex\Application $app, Request $request, $id){
@@ -236,4 +233,21 @@ function getSearchForm(\Silex\Application $app)
   $form->add('submit', SubmitType::class, ['label' => 'Search']);
 
   return $form->getForm();
+}
+
+function getUserCalories(Silex\Application $app)
+{
+  $setting = getUserSettings($app);
+  return isset($setting['calories'])? $setting['calories']: null;
+}
+
+function getUserSettings(Silex\Application $app)
+{
+  /*
+   * Recuperiamo il valore già a sistema
+   */
+  $sql = "SELECT * FROM settings LIMIT 1";
+  $setting = $app['db']->fetchAssoc($sql, []);
+
+  return $setting;
 }
